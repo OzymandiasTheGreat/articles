@@ -13,7 +13,7 @@ and brings priceless value:
 
 A laptop is perfect for this purpose - it has a built-in UPS.
 That's an uninterruptable power supply, of which a laptop battery is an example. That's very important for servers, and doubly so backup servers. In case of a power outage, it allows your server to
-finish it's current operations and gently shutdown, ensuring no
+finish its' current operations and gently shutdown, ensuring no
 data corruption can occur.
 
 Another nice thing about a laptop is the screen and the keyboard.
@@ -21,8 +21,7 @@ While definitely not a necessity, in case of trouble it makes troubleshooting mu
 
 And when I say an old laptop, I mean *old*. My backup server
 runs on 13-year old ASUS X51L. It's not like I didn't have other laptops in the meantime, it's just that this beast is the most
-reliable machine I've ever owned. It just keeps chugging along
-even after being dropped.
+reliable machine I've ever owned.
 
 So without further ado, onto what you'll need.
 
@@ -61,7 +60,7 @@ Set-Service -Name ssh-agent -StartupType Automatic
 Start-Service ssh-agent
 ```
 
-The explanation: *scoop* is a package manager for PowerShell, we set it up to install the latest version of OpenSSH from github so we don't have to mess with system files and permissions.
+The explanation: *scoop* is a package manager for PowerShell, we set it up to install the latest version of OpenSSH from GitHub so you don't have to mess with system files and permissions.
 We enable the running of remote scripts for the current user so we can run the scoop installer.
 Then we install OpenSSH, set it up, and enable the ssh-agent service.
 Now we have a working ssh setup and so we're done here for now.
@@ -76,7 +75,7 @@ updates are usually faster and less error-prone than dist-upgrades and its' LTS 
 
 ### Basic Server
 
-Go to [ubuntu.com](https://ubuntu.com/download/server) and choose Manual Server Installation. Proceed to download the ISO and use your software of choice to make a bootable USB stick. One popular, cross-platform choice for this task is [etcher](https://www.balena.io/etcher/).
+Go to [ubuntu.com](https://ubuntu.com/download/server) and choose "Manual Server Installation". Proceed to download the ISO and use your software of choice to make a bootable USB stick. One popular, cross-platform choice for this task is [etcher](https://www.balena.io/etcher/).
 
 Boot your laptop (the old one) from the USB and let's walk through the installation.
 
@@ -128,7 +127,7 @@ This is the last important step, create a user and set the hostname for your ser
 
 ![User screen](./screenshots/8_iso_user_info.png)
 
-You'll get offered to install ssh server now. Do accept, cause we'll be doing most of our configuration over ssh.
+You'll get offered to install the ssh server now. Do accept, cause we'll be doing most of our configuration over ssh.
 
 ![ssh offer](./screenshots/9_iso_ssh.png)
 
@@ -142,7 +141,7 @@ We'll fix this by enabling remote unlocking soon, but for now, just enter the pa
 You'll be dropped into a terminal prompt. Enter the user name you set up and the password when prompted.
 You'll see a welcome message containing system information, ads for Canonical services, and some info about available updates.
 
-First, we want to update. Type `sudo apt update && sudo apt upgrade` and press *Enter*. When prompted to confirm type *y* and press *Enter*. Now, wait a while for the updates to complete.
+First, we want to update. Type `sudo apt update && sudo apt upgrade` and press *Enter*. When prompted to confirm type "y" and press *Enter*. Now, wait a while for the updates to complete.
 
 Now we can set up remote unlocking.
 
@@ -180,7 +179,7 @@ In the ssh prompt execute `sudo nano /etc/dropbear-initramfs/authorized_keys` an
 no-port-forwarding,no-agent-forwarding,no-x11-forwarding,command="/bin/cryptroot-unlock" <paste the contents of id_rsa.pub here>
 ```
 
-You'll find `id_rsa.pub` in `~/.ssh` (C:\Users\<your username>\.ssh on Windows). To view contents quickly just run `cat ~/.ssh/id_rsa.pub`. Note that you have to run this command on your primary computer outside the ssh prompt. Just open a second tab/window of the terminal, run this command and copy the long random string it outputs.
+You'll find `id_rsa.pub` in `~/.ssh` (`C:\Users\<your username>\.ssh` on Windows). To view contents quickly just run `cat ~/.ssh/id_rsa.pub`. Note that you have to run this command on your primary computer outside the ssh prompt. Just open a second tab/window of the terminal, run this command and copy the long random string it outputs.
 
 Then in nano, again, press *CTRL-o* and *Enter* to save and *CTRL-x* to exit.
 Then execute `sudo update-initramfs -u` and wait for it to complete. If you did everything correctly at this point we can restart the server remotely via ssh. Execute `sudo systemctl reboot` and wait a few minutes. Since we installed updates as well, the reboot might take a while.
@@ -189,13 +188,13 @@ Try to connect to your server with `ssh -p 2244 root@<your server's ip address>`
 
 ![ssh into bootloader](./screenshots/ssh_boot.png)
 
-You'll get a warning about authenticity since we haven't connected to the bootloader before. Type *yes* and press *Enter*.
+You'll get a warning about authenticity since we haven't connected to the bootloader before. Type "yes" and press *Enter*.
 Now you can enter the disk password, at which point you'll get a line about success and the connection will automatically close.
 Wait a minute or so and you can log in to your server.
 
-For the final touches, let's enable a passwordless login. On your primary computer (where you generated your key pair) execute `ssh-copy-id <username>@<server's ip address>`.
+For the final touches, let's enable a passwordless login. On your primary computer (where you generated your key pair) execute `ssh-copy-id <username>@<server's IP address>`.
 Enter your password when prompted and once the command completes,
-try to login to your server: `ssh <username>@<server's ip address>`. You should be able to log in without a password now!
+try to login to your server: `ssh <username>@<server's IP address>`. You should be able to log in without a password now!
 
 Now to disable password and root logins completely, on your server's ssh session execute `sudo nano /etc/ssh/sshd_config`.
 Find these lines and change values as follows:
@@ -211,6 +210,18 @@ Congratulations, we've enabled remote unlock and secure shell access. Now your b
 
 > If you have multiple computers you plan to backup, you may want to delay disabling password login until you set them all up.
 > This will make the setup easier, but for guaranteed security *DO NOT FORGET TO DISABLE PASSWORD LOGINS*
+
+#### Prevent Hibernation on Lid Close
+
+One little thing you'll likely want to do as well is to disable sleep/hibernation when your server's (laptop's) lid is closed.
+I mean, if it's sleeping we can't connect to it or perform backups. To do this, first, run `sudo systemctl mask sleep.target suspend.target hibernate.target hybrid-sleep.target`.
+
+This would be it, but disabling sleep may cause high CPU usage when the lid is closed. I *think* it's a bug in Ubuntu that hasn't been fixed yet. To avoid trashing your CPU and fans run `sudo nano /etc/systemd/logind.conf` and edit the following lines as so:
+
+```bash
+HandleLidSwitch=ignore
+HandleLidSwitchDocked=ignore
+```
 
 ### The external drive
 
@@ -233,10 +244,10 @@ Let's encrypt and format the newly created partition. Run `sudo cryptsetup -y lu
 
 ![Encrypt partition](./screenshots/luks_setup.png)
 
-Now let's set up a keyfile for automatic mounting at boot.
+Now let's set up a key file for automatic mounting at boot.
 Run `sudo dd if=/dev/urandom of=/root/.keyfile bs=1024 count=4`.
 This will create a 4KB file with random data we'll use as a key.
-Change it's permissions so it's only accessible by root with `sudo chmod 0400 /root/.keyfile` and add it to your disk with `sudo cryptsetup luksAddKey /dev/sdb1 /root/.keyfile`. Again, replace "sdb1" with your device and partition number.
+Change its' permissions so it's only accessible by root with `sudo chmod 0400 /root/.keyfile` and add it to your disk with `sudo cryptsetup luksAddKey /dev/sdb1 /root/.keyfile`. Again, replace "sdb1" with your device and partition number.
 
 ![Add keyfile](./screenshots/luks_add_key.png)
 
@@ -262,7 +273,7 @@ If everything looks good, we just need to take ownership of the "data" directory
 
 Now we need to set up the router. At the very least you want to assign a static internal IP to the server so you can easily connect to it. If you want to back up over the internet, you also need to set up port forwarding.
 
-Unfortunately, every router is quite different. Because of that, we'll cover [DD-WRT](https://dd-wrt.com/) which is an open source alternative router firmware. The steps you need to take will probably differ but should be similar enough.
+Unfortunately, every router is quite different. Because of that, we'll cover [DD-WRT](https://dd-wrt.com/) which is an open-source alternative router firmware. The steps you need to take will probably differ but should be similar enough.
 
 First, log in to your router. The IP you need to enter into your browser will differ based on your router model and router settings but you can google that.
 
@@ -278,7 +289,7 @@ If you don't plan to make backups outside your home network, we're done. Else, m
 
 ![DD-WRT port forwarding](./screenshots/dd-wrt_port_forwarding.png)
 
-Again, click the Add button. Enter a name for this port to make telling it apart easier. Choose TCP as the protocol. Leave the next field blank. Choose the port you'll connect to. Pretty much any port you can remember will do here, just don't use default ssh port (22). Enter your server's internal IP address. It's the one you set in the previous step. Enter the port on the server we'll be connecting to, which is 22 since we'll be doing everything over ssh.
+Again, click the Add button. Enter a name for this port to make telling it apart easier. Choose TCP as the protocol. Leave the next field blank. Choose the port you'll connect to. Pretty much any port you can remember will do here, just don't use the default ssh port (22). Enter your server's internal IP address. It's the one you set in the previous step. Enter the port on the server we'll be connecting to, which is 22 since we'll be doing everything over ssh.
 
 To configure any additional ports just follow the last paragraph.
 And we're done here.
@@ -375,7 +386,7 @@ On the first run, you'll be prompted to restore the configuration. Since we're s
 Select mode SSH, don't bother with encryption. Back In Time supports transparently encrypting your backups with EncFS but EncFS has long-standing bugs that make it not a secure option.
 And since we used Luks encryption on the server this is irrelevant anyway.
 
-Host is your servers' IP address, port is most likely 22, user - your username on the server, path is `/media/data` if you followed this tutorial, leave cipher unchanged and select your private key. That's the one that DOESN'T end in .pub.
+The host is your servers' IP address, the port is most likely 22, user - your username on the server, the path is `/media/data` if you followed this tutorial, leave cipher unchanged and select your private key. That's the one that DOESN'T end in .pub.
 
 If you set the passphrase for the key pair enter it in "SSH private key" and check "Save Password to Keyring". The keyring is secure storage for sensitive information, it will keep your password encrypted until you log in and then make it available to Back In Time so you don't have to enter it every day.
 
@@ -391,7 +402,7 @@ The exclude section already contains quite a few entries. These are large direct
 
 ![Back In Time excludes](./screenshots/3_backintime_config.png)
 
-The Auto-remove section is probably the biggest advantage Back In Time has over rdiff-backup. You can configure automatic removal of old snapshots and not worry about it.
+The Auto-remove section is probably the biggest advantage Back In Time has over rdiff-backup. You can configure the automatic removal of old snapshots and not worry about it.
 
 ![Back In Time auto-remove](./screenshots/4_backintime_config.png)
 
@@ -427,48 +438,48 @@ Then click Actions >> Settings.
 
 ![syncthing settings](./screenshots/syncthing_settings.png)
 
-Change Default Folder Path to `/media/data/syncthing` or whatever is the path to your external disk. Then switch to GUI tab.
+Change Default Folder Path to `/media/data/syncthing` or whatever is the path to your external disk. Then switch to the GUI tab.
 
 ![syncthing GUI tab](./screenshots/syncthing_settings_gui.png)
 
-Enter a username and a strong password. It's also a good idea to note down the password in your password manager. You may also set theme to something easier on the eyes. Now, click Save. The page will reload and you'll be prompted for the username and password you just set up.
+Enter a username and a strong password. It's also a good idea to note down the password in your password manager. You may also set the theme to something easier on the eyes. Now, click Save. The page will reload and you'll be prompted for the username and password you just set up.
 
-You may also want to remove the Default Folder now, since we don't plan on storing files on the internal disk. To do that click on Default Folder to expand it, than Edit >> Remove. Confirm and we're done with the server for now.
+You may also want to remove the Default Folder now since we don't plan on storing files on the internal disk. To do that click on Default Folder to expand it, then Edit >> Remove. Confirm and we're done with the server for now.
 
-On Android side we'll be using [Syncthing-Fork](https://play.google.com/store/apps/details?id=com.github.catfriend1.syncthingandroid). It also [available on F-Droid](https://f-droid.org/en/packages/com.github.catfriend1.syncthingandroid/) and it's a good idea to set that up if you plan to also back up apps (app backup requires root though).
+On the Android side, we'll be using [Syncthing-Fork](https://play.google.com/store/apps/details?id=com.github.catfriend1.syncthingandroid). It also [available on F-Droid](https://f-droid.org/en/packages/com.github.catfriend1.syncthingandroid/) and it's a good idea to set that up if you plan to also back up apps (app backup requires root though).
 
-Install and open it. Then click Add Folder button in the top right of the interface. For this example we'll be setting up camera folder (DCIM), but the steps are the same for any other location. Also note, if you use something like [Google Photos](https://play.google.com/store/apps/details?id=com.google.android.apps.photos) or [Nextcloud](https://nextcloud.com/) to continuously upload your photos and free up space on your device, using syncthing to backup your camera folder doesn't make sense even with file versioning, because once the photos are deleted from the phone the changes will be propagated to the server.
+Install and open it. Then click Add Folder button in the top right of the interface. For this example, we'll be setting up the camera folder (DCIM), but the steps are the same for any other location. Also note, if you use something like [Google Photos](https://play.google.com/store/apps/details?id=com.google.android.apps.photos) or [Nextcloud](https://nextcloud.com/) to continuously upload your photos and free up space on your device, using syncthing to backup your camera folder doesn't make sense even with file versioning, because once the photos are deleted from the phone the changes will be propagated to the server.
 
 ![Syncthing-Fork Edit Folder](./screenshots/syncthing_fork_add_folder.png)
 
-Enter the name of the folder. This doesn't much matter, it's only here so you know which folder you're working with. Then select folder path. Do nothing with devices for now. For the Folder Type I suggest you choose Send Only, because we won't be making changes server-side. Do make sure Watch for changes is ON. Now select versioning scheme and we're done. If you only transfer your photos manually choose Trashcan versioning with sufficiently large Cleanout window to recover deleted files. Otherwise, if you clean out this folder more often, choose Simple scheme with something like 3 versions to keep per file.
+Enter the name of the folder. This doesn't much matter, it's only here so you know which folder you're working with. Then select the folder path. Do nothing with devices for now. For the Folder Type, I suggest you choose Send Only because we won't be making changes server-side. Do make sure Watch for changes is ON. Now select the versioning scheme and we're done. If you only transfer your photos manually choose Trashcan versioning with a sufficiently large Cleanout window to recover deleted files. Otherwise, if you clean out this folder more often, choose Simple scheme with something like 3 versions to keep per file.
 
 ![Syncthing-Fork add device](./screenshots/syncthing_fork_add_device.png)
 
-Now, switch to Devices tab and in the top right tap the Add Device button. On your computer, where you have syncthing web interface open, click Actions >> Show ID. On your phone click the QR code button in the right of the top row of the Add Device screen. Grant the Camera permission and scan the QR code on your computer's screen. Enter the name for the Device, that's your server and I named it humpty. Choose folders you want to sync.
-Save your changes by tapping the check mark button at the top.
+Now, switch to the Devices tab, and in the top right tap the Add Device button. On your computer, where you have syncthing web interface open, click Actions >> Show ID. On your phone click the QR code button in the right of the top row of the Add Device screen. Grant the Camera permission and scan the QR code on your computer's screen. Enter the name for the Device, that's your server and I named it humpty. Choose folders you want to sync.
+Save your changes by tapping the checkmark button at the top.
 
 ![Syncthing accept device](./screenshots/syncthing_accept.png)
 
-Back on your computer, close ID screen and you should see a notification about adding device. Click add, switch to Sharing tab in the dialog that pops up, and mark Auto Accept before saving. This is so you don't have to go back to web interface when adding new folders. That's it, now you can close web interface. We won't be going back to it, unless something goes wrong.
+Back on your computer, close the ID screen and you should see a notification about adding a device. Click add, switch to Sharing tab in the dialog that pops up, and mark Auto Accept before saving. This is so you don't have to go back to the web interface when adding new folders. That's it, now you can close the web interface. We won't be going back to it unless something goes wrong.
 
 On your phone, configure any additional folders you want to back up, paying attention to the versioning scheme you choose and selecting your server in the devices section.
 
 #### Backing up Apps
 
-You'll need root for this, no way around it. There are backup solutions that claim to work without root and they fail on restore more often than not. Especially if you want to restore a backup on a new device for a seamless upgrade, these apps will fail you.
+You'll need to root for this, no way around it. There are backup solutions that claim to work without root and they fail on restore more often than not. Especially if you want to restore a backup on a new device for a seamless upgrade, these apps will fail you.
 
-Rooted app backup solutions boil down to [TitaniumBackup](https://play.google.com/store/apps/details?id=com.keramidas.TitaniumBackup) and [OAndBackupX](https://f-droid.org/en/packages/com.machiav3lli.backup/). These apps are pretty similar in what they do, with TitaniumBackup being older and theoretically more powerful, with a really horrible interface, and OAndBackupX being open source, easier to use, and judging from online reviews - more reliable when restoring. Personally I've had great success with both of these apps, whether I'm restoring backup on the same device after flashing a new ROM, or setting up a new device from a backup.
+Rooted app backup solutions boil down to [TitaniumBackup](https://play.google.com/store/apps/details?id=com.keramidas.TitaniumBackup) and [OAndBackupX](https://f-droid.org/en/packages/com.machiav3lli.backup/). These apps are pretty similar in what they do, with TitaniumBackup being older and theoretically more powerful, with a really horrible interface, and OAndBackupX being open source, easier to use, and judging from online reviews - more reliable when restoring. Personally, I've had great success with both of these apps, whether I'm restoring a backup on the same device after flashing a new ROM or setting up a new device from a backup.
 
-Since OAndBackupX is open source, it's what we'll cover in this article. Alas it's only available on [F-Droid](https://f-droid.org/), so you'll have to set that up.
+Since OAndBackupX is open-source, it's what we'll cover in this article. Alas, it's only available on [F-Droid](https://f-droid.org/), so you'll have to set that up.
 
-Another thing to keep in mind is that most Android apps cannot be backed up. Or rather, restored. If an app depends on remote server to function and/or uses encrypted keystore to store credentials, it will not function upon restore. There's really nothing you can do about this, and to save time and battery, better don't even try to back up these apps. Examples would be most Android games, Facebook, and Nextcloud.
+Another thing to keep in mind is that most Android apps cannot be backed up. Or rather, restored. If an app depends on a remote server to function and/or uses encrypted keystore to store credentials, it will not function upon restore. There's really nothing you can do about this, and to save time and battery, better don't even try to back up these apps. Examples would be most Android games, Facebook, and Nextcloud.
 
 With that out of the way, we're ready to back up some apps. When you open OAndBackupX, you'll be presented with this:
 
 ![OAndBackupX home](./screenshots/oandbackupx_home.png)
 
-Firstly, note the little "i" in the top right. By clicking on it, you'll get a lot of links to learn in depth about this app and ways to use it. The next thing of note is the action bar at the bottom of the screen. Click the cog in the action bar to access settings.
+Firstly, note the little "i" in the top right. By clicking on it, you'll get a lot of links to learn in-depth about this app and ways to use it. The next thing of note is the action bar at the bottom of the screen. Click the cog in the action bar to access settings.
 
 ![OAndBackupX settings](./screenshots/oandbackupx_settings.png)
 
@@ -476,17 +487,17 @@ You'll do alright with defaults, but you'll want to change the location of backu
 
 ![OAndBackupX User preferences](./screenshots/oandbackupx_folder_selection.png)
 
-Now tap Backup folder and choose a location on your *internal* SD card. You'll want internal SD card to avoid permission issues, or you can format your external SD card as internal storage.
+Now tap the Backup folder and choose a location on your *internal* SD card. You'll want an internal SD card to avoid permission issues, or you can format your external SD card as internal storage.
 
-Next go back to OAndBackupX's home screen. On the action bar at the bottom tap calendar-looking icon to schedule a backup.
+Next, go back to OAndBackupX's home screen. On the action bar at the bottom tap the calendar-looking icon to schedule a backup.
 
 ![OAndBackupX scheduled backups](./screenshots/oandbackupx_new_schedule.png)
 
-Tap the red button that looks like new alarm. This will create a new scheduled backup titled All apps. Tap on this entry to edit it.
+Tap the red button that looks like a new alarm. This will create a new scheduled backup titled All apps. Tap on this entry to edit it.
 
 ![OAndBackupX scheduled backup edit](./screenshots/oandbackupx_schedule.png)
 
-Choose when you want the backups to happen. Sometime at night when you're not using the phone is a good idea. Leave the interval as 1 day to have backups everyday. Leave the filter as All apps. Set the Backup mode as APK and Data. Tap CUSTOM LIST to select which apps to backup. Then mark Enable toggle and we're done.
+Choose when you want the backups to happen. Some time at night when you're not using the phone is a good idea. Leave the interval as 1 day to have backups every day. Leave the filter as All apps. Set the Backup mode as APK and Data. Tap CUSTOM LIST to select which apps to backup. Then mark Enable toggle and we're done.
 
 Now, every night the apps you chose will be backed up to a folder you specified, and if you set up Syncthing to sync that folder,
 synced to your server.
@@ -495,11 +506,11 @@ synced to your server.
 
 Now that all your devices are backed up, you probably still have a lot of data stored in the cloud. You may think it's safe. It's almost certainly backed up. However, what if you get locked out of your account? Hacked? Or simply the cloud provider messes up big time, or worse - goes down? It's a good idea to have a local copy of your cloud data.
 
-Alas, not all cloud providers provide an easy way to export your data. Much less the means to this automatically. I'm looking at you Facebook and Twitter. They only offer archives that take forever to generate and can only be downloaded for a limited time through a link sent to your email. This is sub-par to say the least. On the other hand Google and some other cloud providers offer most if not all of your data through open, free APIs that can be easily automated. We'll focus on these.
+Alas, not all cloud providers provide an easy way to export your data. Much less the means to this automatically. I'm looking at you Facebook and Twitter. They only offer archives that take forever to generate and can only be downloaded for a limited time through a link sent to your email. This is sub-par, to say the least. On the other hand, Google and some other cloud providers offer most if not all of your data through open, free APIs that can be easily automated. We'll focus on these.
 
 ### Cloud Storage
 
-We'll be using [rclone](https://rclone.org/) to sync our Google Drive to a local directory. It's a one-way sync, but for backup purposes this will do great. Do note that rclone supports many more cloud providers than just Google. If you use Dropbox or OneDrive, they can be synced as well. For the sake of brevity we'll focus on Google Drive since it's one of the most popular and one of the most complicated to set up.
+We'll be using [rclone](https://rclone.org/) to sync our Google Drive to a local directory. It's a one-way sync, but for backup purposes, this will do great. Do note that rclone supports many more cloud providers than just Google. If you use Dropbox or OneDrive, they can be synced as well. For the sake of brevity, we'll focus on Google Drive since it's one of the most popular and one of the most complicated to set up.
 
 ![Google API Console](./screenshots/google_api_console.png)
 
@@ -507,52 +518,52 @@ Before we begin, go to [Google API Console](https://console.developers.google.co
 
 ![New Project](./screenshots/google_api_console_new_project.png)
 
-Click ENABLE APIs AND SERVICES, search for Drive and enable "Google Drive API". Then click Credentials in the side bar.
-Now we need to configure Oauth Consent Screen. This is something you need to do once and it doesn't much matter because we'll be the only ones using these APIs. Click the "CONFIGURE CONSENT SCREEN" button near the top right. Select "EXTERNAL" and click "CREATE". Enter application name, I suggest you use project (server) name. Select contact emails as these are required, just enter your email. Again, it doesn't really matter as you'll be the only user. Click "SAVE" and then click "OAuth consent screen" in the sidebar. This is very important - click "PUBLISH APP". Dismiss the pop-up and then click "Credentials" in the sidebar again.
+Click ENABLE APIs AND SERVICES, search for Drive, and enable "Google Drive API". Then click Credentials in the sidebar.
+Now we need to configure OAuth Consent Screen. This is something you need to do once and it doesn't much matter because we'll be the only ones using these APIs. Click the "CONFIGURE CONSENT SCREEN" button near the top right. Select "EXTERNAL" and click "CREATE". Enter the application name, I suggest you use the project (server) name. Select contact emails as these are required, just enter your email. Again, it doesn't really matter as you'll be the only user. Click "SAVE" and then click "OAuth consent screen" in the sidebar. This is very important - click "PUBLISH APP". Dismiss the pop-up and then click "Credentials" in the sidebar again.
 
-Now click "CREATE CREDENTIALS" button at the top. Select OAuth Client ID. Select "Desktop app" and enter rclone as the name, then click Create. You'll get a pop-up with your client ID and client secret. Leave it at that for now, we're ready to set up the server.
+Now click the "CREATE CREDENTIALS" button at the top. Select OAuth Client ID. Select "Desktop app" and enter rclone as the name, then click Create. You'll get a pop-up with your client ID and client secret. Leave it at that for now, we're ready to set up the server.
 
-ssh into your server. Execute `curl https://rclone.org/install.sh | sudo bash`. Now run `rclone config`. Choose "n" for new remote and enter a name. I'll be using "gdrive". Enter "drive" for Google Drive. Now paste the client ID we got from Google API console and press "Enter". Do the same for client secret. Choose 1 as the scope. Leave "root_folder_id" blank. Leave the "service_account_file" blank as well. Now, for the advanced config.
+ssh into your server. Execute `curl https://rclone.org/install.sh | sudo bash`. Now run `rclone config`. Choose "n" for new remote and enter a name. I'll be using "gdrive". Enter "drive" for Google Drive. Now paste the client ID we got from the Google API console and press "Enter". Do the same for client secret. Choose 1 as the scope. Leave "root_folder_id" blank. Leave the "service_account_file" blank as well. Now, for the advanced config.
 
-Normally you shouldn't need to edit these values with the exception of Google Docs formats. By default rclone exports Google Docs as Microsoft Office documents. If instead you want them in the Open Document format, press "y" to edit advanced config. Leave all values as defaults. When prompted for export formats enter "odt,ods,odp,svg" and proceed to leave the rest as default too.
+Normally you shouldn't need to edit these values with the exception of Google Docs formats. By default rclone exports Google Docs as Microsoft Office documents. If instead, you want them in the Open Document format, press "y" to edit the advanced config. Leave all values as defaults. When prompted for export formats enter "odt,ods,odp,svg" and proceed to leave the rest as default too.
 
-When prompted to use auto config choose "n" for no since we're working on remote machine. You'll get a rather long URL, copy and paste it into your browser.
+When prompted to use auto config choose "n" for no since we're working on a remote machine. You'll get a rather long URL, copy and paste it into your browser.
 
 ![OAuth warning](./screenshots/google_oauth_warning.png)
 
-You'll get a very scary warning, don't worry about it. It's only here because we haven't submitted the app for verification and we don't really need to go through that hassle. Click Advanced and then "Go to \<app name you entered earlier\>". Agree to permission requests and when you get verification code, copy it. Now paste it in to your terminal. Press "Enter" to refuse configuring as Team Drive, press "Enter" again to confirm everything is OK and then enter "q" to quit rclone configuration.
+You'll get a very scary warning, don't worry about it. It's only here because we haven't submitted the app for verification and we don't really need to go through that hassle. Click Advanced and then "Go to \<app name you entered earlier\>". Agree to permission requests and when you get a verification code, copy it. Now paste it into your terminal. Press "Enter" to refuse to configure as Team Drive, press "Enter" again to confirm everything is OK, and then enter "q" to quit rclone configuration.
 
 Now to create a directory where we'll store Google Drive backup execute `mkdir -p /media/data/Google/Drive`. Let's run initial sync with `rclone sync gdrive:/ /media/data/Google/Drive/`.
 This will take a while depending on the size of your Google Drive.
-Subsequent syncs will be much faster, because they'll only download changes.
+Subsequent syncs will be much faster because they'll only download changes.
 
 When the command completes, we want to set up some automation.
 Run `crontab -e` and when prompted select nano as the editor.
-You only need to do this once, subsequent runs will drop you straight into nano. Scroll to the end of the file and enter the following `0 */1 * * * rclone sync gdrive:/ /media/data/Google/Drive >> /home/ozymandias/rclone.log 2>&1`. Explanation: cron is a daemon that run specified commands at specified intervals. `0 */1 * * *` means run every hour. The command is rclone sync we already ran. The `>> /home/ozymandias/rclone.log` redirects output of the command to a log file. Do replace "ozymandias" with your user name. Finally, `2>&1` concatenates errors and standard output into the same stream we redirect to the log file. Do check this log file sometimes to make sure everything is working.
+You only need to do this once, subsequent runs will drop you straight into nano. Scroll to the end of the file and enter the following `0 */1 * * * rclone sync gdrive:/ /media/data/Google/Drive >> /home/ozymandias/rclone.log 2>&1`. Explanation: cron is a daemon that runs specified commands at specified intervals. `0 */1 * * *` means run every hour. The command is rclone sync we already ran. The `>> /home/ozymandias/rclone.log` redirects the output of the command to a log file. Do replace "ozymandias" with your user name. Finally, `2>&1` concatenates errors and standard output into the same stream we redirect to the log file. Do check this log file sometimes to make sure everything is working.
 
 ### Google Photos
 
-Since Google Photos got decoupled from Google Drive, backing them up is a bit of a pain in the behind. We could use rclone to do this as well, since recent versions of rclone have support for the new API. However rclone would only back up the files, without the metadata and your Google Photos creations.
+Since Google Photos got decoupled from Google Drive, backing them up is a bit of a pain in the behind. We could use rclone to do this as well since recent versions of rclone have support for the new API. However, rclone would only back up the files, without the metadata and your Google Photos creations.
 
 Instead we'll use [gphotos-sync](https://github.com/gilesknap/gphotos-sync). It will back up pretty much all of Google Photos data, and since it can only download there's no risk of messing up your library.
 
-Again, this app uses OAuth to authorize with google, so we need to create client ID and client secret for it. We also need to enable Photos Library API for our project.
+Again, this app uses OAuth to authorize with Google, so we need to create a client ID and client secret for it. We also need to enable Photos Library API for our project.
 
-In Google API console click Dashboard in the sidebar, then ENABLE APIs AND SERVICES and search for Photos Library API. Enable it.
+In Google API console click Dashboard in the sidebar, then ENABLE APIs AND SERVICES, and search for Photos Library API. Enable it.
 
 In the Credentials section click CREATE CREDENTIALS, select "OAuth client ID" and then select "Desktop app". Enter "gphotos-sync" as the name and click CREATE. You can close the pop-up because for this app we'll be downloading formatted credentials file.
 In the "OAuth 2.0 Client IDs" section, on the line that says "gphotos-sync" click the download button (the downwards facing arrow). Save the file as "client_secret.json" in your downloads directory.
 
-Now we're ready to install and authorize gphotos-sync. Let's create a directory where we'll store Google Photos data by running `mkdir -p /media/data/Google/Photos`. Then run `sudo snap install gphotos-sync` to install the app. Run `sudo snap connect gphotos-sync:removable-media` to enable access to the external hard drive. Now, run `gphotos-sync` without arguments once to create and symlink the snap directories. Create the config directory with `mkdir -p ~`. Then on the computer where you downloaded the credentials open new terminal in your downloads directory and execute `scp client_secret.json <your username on the server>@<your server's IP address>:/snap/gphotos-sync/current/.config/gphotos-sync`.
+Now we're ready to install and authorize gphotos-sync. Let's create a directory where we'll store Google Photos data by running `mkdir -p /media/data/Google/Photos`. Then run `sudo snap install gphotos-sync` to install the app. Run `sudo snap connect gphotos-sync:removable-media` to enable access to the external hard drive. Now, run `gphotos-sync` without arguments once to create and symlink the snap directories. Create the config directory with `mkdir -p ~`. Then on the computer where you downloaded the credentials open a new terminal in your downloads directory and execute `scp client_secret.json <your username on the server>@<your server's IP address>:/snap/gphotos-sync/current/.config/gphotos-sync`.
 
 To authorize and perform initial sync run `gphotos-sync /media/data/Google/Photos`. Once again you'll get a long URL you need to copy and paste into your browser. And once again you'll get a scary warning. Click Advanced and proceed to authorize the app.
-When you get the authorization code, copy and paste it into you ssh session. Now, go make a cup of coffee while all your photos are downloaded.
+When you get the authorization code, copy and paste it into your ssh session. Now, go make a cup of coffee while all your photos are downloaded.
 
-Once you enjoyed your coffee and the command completed, let's automate this for the future. Again, we'll do this with a cron job. Run `crontab -e`, scroll to last line and enter `15 */1 * * * gphotos-sync /media/data/Google/Photos >> /dev/null 2>&1`. Explanation: we've set it to run 15 minutes past every hour. Since gphotos-sync keeps log in the destination directory, we redirect it's output to /dev/null, i.e. we discard it.
+Once you enjoyed your coffee and the command completed, let's automate this for the future. Again, we'll do this with a cron job. Run `crontab -e`, scroll to last line and enter `15 */1 * * * gphotos-sync /media/data/Google/Photos >> /dev/null 2>&1`. Explanation: we've set it to run 15 minutes past every hour. Since gphotos-sync keeps log in the destination directory, we redirect its' output to /dev/null, i.e. we discard it.
 
 ### EMail
 
-If you use desktop email client, you can probably skip this step since your emails will be included in the desktop backup. Otherwise read on. We'll use mbsync utility included in the isync package to download our emails via IMAP to a local directory. This package is in the Ubuntu archives, so to install it just run `sudo apt install isync`.
+If you use a desktop email client, you can probably skip this step since your emails will be included in the desktop backup. Otherwise, read on. We'll use the mbsync utility included in the isync package to download our emails via IMAP to a local directory. This package is in the Ubuntu archives, so to install it just run `sudo apt install isync`.
 
 Now create a file called ".mbsyncrc" in your home directory on the server and put the following in it. To do that run `cd ~ && nano .mbsyncrc`.
 
@@ -583,11 +594,11 @@ SyncState *
 > You really shouldn't put your password in plain-text files.
 > Instead enable 2-factor authentication and create an app password for this.
 
-You'll also need to enable IMAP in the GMail settings. In GMail click the cog in the top right >> See all settings >> Forwarding and POP/IMAP, select Enable IMAP and click Save changes.
+You'll also need to enable IMAP in the Gmail settings. In Gmail click the cog in the top right >> See all settings >> Forwarding and POP/IMAP, select Enable IMAP and click Save changes.
 
-Let's create the mail directory with `mkdir -p /media/data/Google/GMail` and run initial sync with `mbsync --all`. Once it completes let's make a cron job for this task too. Again, run `crontab -e`, scroll to last line and put `30 */1 * * * mbsync --all >> /home/ozymandias/mbsync.log 2>&1`. This time the cron line should already be pretty clear. We're running mbsync 30 minutes past every hour and saving log in our home directory.
+Let's create the mail directory with `mkdir -p /media/data/Google/Gmail` and run initial sync with `mbsync --all`. Once it completes let's make a cron job for this task too. Again, run `crontab -e`, scroll to last line and put `30 */1 * * * mbsync --all >> /home/ozymandias/mbsync.log 2>&1`. This time the cron line should already be pretty clear. We're running mbsync 30 minutes past every hour and saving log in our home directory.
 
-We used GMail here, but with minor changes to the .mbsyncrc, you can use any mail provider that supports IMAP. Which in this day and age should mean all of them.
+We used Gmail here, but with minor changes to the .mbsyncrc, you can use any mail provider that supports IMAP. Which in this day and age should mean all of them.
 
 ### Calendar and Contacts
 
@@ -638,13 +649,24 @@ conflict_resolution = "b wins"
 metadata = ["displayname"]
 ```
 
-Save with *CTRL+o* *Enter* and close with *CTRL+x*. Run `vdirsyncer discover`. On the first run you'll once again get a long URL you should copy and open in your browser. You'll get a scary warning about unverified app, just click Advanced and proceed. Once you grant permission for your calendar, copy the code and paste it into the terminal. Then you'll be prompted for each calendar in your Google account since it doesn't exist locally. Just enter "y" to create it every time.
+Save with *CTRL+o* *Enter* and close with *CTRL+x*. Run `vdirsyncer discover`. On the first run you'll once again get a long URL you should copy and open in your browser. You'll get a scary warning about an unverified app, just click Advanced and proceed. Once you grant permission for your calendar, copy the code and paste it into the terminal. Then you'll be prompted for each calendar in your Google account since it doesn't exist locally. Just enter "y" to create it every time.
 
 Once the calendars are configured you'll get a long authorization URL for your contacts. The steps to take are exactly the same as for the calendar.
 
-Now that vdirsyncer is authorized and aware of all our calendars and address books, we're ready to sync. Run `vdirsyncer sync` and then `vdirsyncer metasync`. Now, to automate this, let's create a cron job. Run `crontab -e`, scroll to last line, and put this in it:
+Now that vdirsyncer is authorized and aware of all our calendars and address books, we're ready to sync. Run `vdirsyncer sync` and then `vdirsyncer metasync`. Now, to automate this, let's create a cron job. Run `crontab -e`, scroll to the last line, and put this in it:
 
 ```crontab
 40 */1 * * * vdirsyncer sync >> /home/ozymandias/vdirsyncer.log 2>&1
 50 */1 * * * vdirsyncer metasync >> /home/ozymandias/vdirsyncer.log 2>&1
 ```
+
+## Closing Words
+
+Data security is very important, as losing your data in this digital age can be devastating. By following this tutorial you took a major step in ensuring your data survives no matter what.
+
+Ideally, you'd have a similar setup somewhere away from home for off-site backups. So that in the event of a disaster such as flooding, fire, or similar event that could physically destroy your backup server and devices, you'd still have a copy of your data that wasn't affected by this event. You should consider this going forward.
+
+I tried to make this tutorial as exhaustive as I could, even so, since I don't own any Apple devices, I couldn't cover those. I may have unintentionally made omissions elsewhere as well.
+If you see an error or have something to add, all of my articles are hosted on [GitHub](https://github.com/OzymandiasTheGreat/articles) under Creative Commons Attribution Share-Alike license version 4.0. So feel free to make edits and pull requests, you will get attribution at the end of the article.
+
+Congratulations on securing your data, stay safe out there!
